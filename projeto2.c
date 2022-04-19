@@ -13,6 +13,7 @@
 #define MAXDURACAO 6
 #define MAXCAPACIDADE 4
 #define MAXVOOS 30000
+#define MAXAIRPORTS 40
 #define MAXINPUT 65535
 
 typedef struct {
@@ -38,30 +39,30 @@ typedef struct nohs{
 
 
 typedef struct{
-    char Codigo_voo[30000][MAXCODIGO_VOO];
-    char IDpartida[30000][MAXID];
-    char IDchegada[30000][MAXID];
-    data Data[30000];
-    hora Horas[30000];
-    hora Duracao[30000];
-    int Capacidade[30000];
-    Ligacao reservas_list[30000];
-    int Num_passageiros[30000];
-    int Num_reservas[30000];
+    char Codigo_voo[MAXCODIGO_VOO];
+    char IDpartida[MAXID];
+    char IDchegada[MAXID];
+    data Data;
+    hora Horas;
+    hora Duracao;
+    int Capacidade;
+    Ligacao reservas_list;
+    int Num_passageiros;
+    int Num_reservas;
 } voo;
 
 typedef struct {
-    char ID[40][MAXID];      
-    char cidade[40][MAXCIDADE];           
-    char pais[40][MAXPAIS];
-    int N_voos[40];
+    char ID[MAXID];      
+    char cidade[MAXCIDADE];           
+    char pais[MAXPAIS];
+    int N_voos;
 } sistema;
 
 
 int contador_aeroportos = 0;
 int contador_voos = 0;
-sistema aeroportos = {0};
-voo voos = {0};
+sistema aeroportos[MAXAIRPORTS] = {0};
+voo voos[MAXVOOS] = {0};
 data Data = {01,01,2022};
 hora Hora = {0};
 
@@ -118,59 +119,32 @@ int Data_Maior(data Data1, data Data2, hora Hora1, hora Hora2){
 
 /*Funcao ordena os aeroportos por ordem alfabetica de IDs*/
 void insertionSort_aeroportos(){
-    int i, j, chave_N_voos;
-    char chave[MAXID], chave_cidade[MAXCIDADE], chave_pais[MAXPAIS];
+    int i, j;
+    sistema chave;
     for (i = 1; i < contador_aeroportos; i++) {
-        strcpy(chave,aeroportos.ID[i]);
-        strcpy(chave_cidade, aeroportos.cidade[i]);
-        strcpy(chave_pais,aeroportos.pais[i]);
-        chave_N_voos = aeroportos.N_voos[i];
+        chave = aeroportos[i];
         j = i - 1;
-        while (j >= 0 && strcmp(aeroportos.ID[j],chave) > 0){
-            strcpy(aeroportos.ID[j + 1], aeroportos.ID[j]);
-            strcpy(aeroportos.cidade[j + 1], aeroportos.cidade[j]);
-            strcpy(aeroportos.pais[j + 1], aeroportos.pais[j]);
-            aeroportos.N_voos[j + 1] = aeroportos.N_voos[j];
+        while (j >= 0 && strcmp(aeroportos[j].ID,chave.ID) > 0){
+            aeroportos[j + 1] = aeroportos[j];
             j--;
         }
-        strcpy(aeroportos.ID[j + 1], chave);
-        strcpy(aeroportos.cidade[j + 1], chave_cidade);
-        strcpy(aeroportos.pais[j + 1], chave_pais);
-        aeroportos.N_voos[j + 1] = chave_N_voos;
+        aeroportos[j + 1] = chave;
     }
 }
 
 /*Funcao ordena os voos de um unico aeroporto por data antigos -> recentes*/
 void insertionSort_Voos_Data(voo *voos_p_ord, int n){
-    int i, j, chave_Capacidade;
-    data chave_Data = {0};
-    hora chave_Horas = {0};
-    char chave_Codigo_voo[MAXCODIGO_VOO], chave_IDpartida[MAXID];
-    char chave_IDchegada[MAXID];
+    int i, j;
+    voo chave;
     for (i = 1; i < n; i++) {
-        strcpy(chave_Codigo_voo, voos_p_ord->Codigo_voo[i]);
-        strcpy(chave_IDpartida, voos_p_ord->IDpartida[i]);
-        strcpy(chave_IDchegada, voos_p_ord->IDchegada[i]);
-        chave_Capacidade = voos_p_ord->Capacidade[i];
-        chave_Data = voos_p_ord->Data[i];
-        chave_Horas = voos_p_ord->Horas[i];
+        chave = voos_p_ord[i];
         j = i - 1;
-        while(j >= 0 && Data_Maior(voos_p_ord->Data[j],chave_Data,
-                voos_p_ord->Horas[j], chave_Horas) != 0){
-            strcpy(voos_p_ord->Codigo_voo[j + 1], voos_p_ord->Codigo_voo[j]);
-            strcpy(voos_p_ord->IDpartida[j + 1], voos_p_ord->IDpartida[j]);
-            strcpy(voos_p_ord->IDchegada[j + 1], voos_p_ord->IDchegada[j]);
-            voos_p_ord->Capacidade[j + 1] = voos_p_ord->Capacidade[j];
-            voos_p_ord->Data[j + 1] = voos_p_ord->Data[j];
-            voos_p_ord->Horas[j + 1] = voos_p_ord->Horas[j];
+        while(j >= 0 && Data_Maior(voos_p_ord[j].Data,chave.Data, 
+            voos_p_ord[j].Horas,chave.Horas) != 0){
+            voos_p_ord[j + 1] = voos_p_ord[j];
             j--;
         }
-        strcpy(voos_p_ord->Codigo_voo[j + 1], chave_Codigo_voo);
-        strcpy(voos_p_ord->IDpartida[j + 1], chave_IDpartida);
-        strcpy(voos_p_ord->IDchegada[j + 1], chave_IDchegada);
-        voos_p_ord->Capacidade[j + 1] = chave_Capacidade;
-        voos_p_ord->Data[j + 1] = chave_Data;
-        voos_p_ord->Horas[j + 1] = chave_Horas;
+        voos_p_ord[j + 1] = chave;
     }
 }
 
@@ -233,16 +207,20 @@ void corrige_Data(data *DataP, hora *HoraP){
 /*Funcao para acabar programa caso o sistema operativo nao tenha 
 mais memoria disponivel*/
 void fail(){
-    printf("No memory.");
+    printf("No memory.\n");
     exit(EXIT_FAILURE);
 }
 
 int main()
 {   
     char cmd;
+    int i;
     cmd = getchar();
     if (cmd == 'q'){
+        for(i = 0; i < contador_voos; i++){
+            free(voos[i].reservas_list);
         exit(0);
+        }
     }
     else if (cmd == 'a'){
         adiciona_aeroportos(cmd);
@@ -271,6 +249,7 @@ int main()
         muda_data(cmd);
         main();
     }
+    
     else if (cmd == 'r'){
         adiciona_ou_lista_reservas();
         main();
@@ -302,16 +281,16 @@ int adiciona_aeroportos(){
     }
     else if(contador_aeroportos != 0){
         for (i = 0; i <= contador_aeroportos; i++){
-            if (strcmp(aeroportos.ID[i], id) == 0){
+            if (strcmp(aeroportos[i].ID, id) == 0){
                 printf("duplicate airport\n");
                 return 0;
             }
         }
     }
-    strcpy(aeroportos.ID[contador_aeroportos], id);
-    strcpy(aeroportos.pais[contador_aeroportos], pais);
-    strcpy(aeroportos.cidade[contador_aeroportos], cidade);
-    printf("airport %s\n", aeroportos.ID[contador_aeroportos]);
+    strcpy(aeroportos[contador_aeroportos].ID, id);
+    strcpy(aeroportos[contador_aeroportos].pais, pais);
+    strcpy(aeroportos[contador_aeroportos].cidade, cidade);
+    printf("airport %s\n", aeroportos[contador_aeroportos].ID);
     contador_aeroportos++;
     return 0;
         
@@ -324,8 +303,8 @@ int ordena_aeroportos(){
     if(getchar() == '\n'){
         insertionSort_aeroportos();
         for(i = 0; i < contador_aeroportos; i++){
-            printf("%s %s %s %d\n", aeroportos.ID[i], 
-            aeroportos.cidade[i], aeroportos.pais[i], aeroportos.N_voos[i]);
+            printf("%s %s %s %d\n", aeroportos[i].ID, 
+            aeroportos[i].cidade, aeroportos[i].pais, aeroportos[i].N_voos);
         }
         return 0;
     }
@@ -334,7 +313,7 @@ int ordena_aeroportos(){
             scanf("%s%c", ID, &caracter);
             verificador = 0;
             for(i = 0; i < contador_aeroportos; i++){
-                if(strcmp(ID,aeroportos.ID[i]) == 0){
+                if(strcmp(ID,aeroportos[i].ID) == 0){
                     verificador++;
                     index = i;
                 }
@@ -343,9 +322,9 @@ int ordena_aeroportos(){
                 printf(IDINVAL, ID);
                 continue;
             }
-            printf("%s %s %s %d\n", aeroportos.ID[index], 
-                aeroportos.cidade[index], aeroportos.pais[index], 
-                aeroportos.N_voos[index]);
+            printf("%s %s %s %d\n", aeroportos[index].ID, 
+                aeroportos[index].cidade, aeroportos[index].pais, 
+                aeroportos[index].N_voos);
         }
         return 0;
     }
@@ -362,10 +341,10 @@ int adiciona_ou_lista_voos(){
     int Horas_Dur, Minutos_Dur, Capacidade;
     if(getchar() == '\n'){
         for(i = 0; i < contador_voos; i++){
-            printf("%s %s %s %02d-%02d-%02d %02d:%02d\n", voos.Codigo_voo[i], 
-                voos.IDpartida[i], voos.IDchegada[i], voos.Data[i].Dia, 
-                voos.Data[i].Mes, voos.Data[i].Ano, voos.Horas[i].Horas, 
-                voos.Horas[i].Minutos);
+            printf("%s %s %s %02d-%02d-%02d %02d:%02d\n", voos[i].Codigo_voo, 
+                voos[i].IDpartida, voos[i].IDchegada, voos[i].Data.Dia, 
+                voos[i].Data.Mes, voos[i].Data.Ano, voos[i].Horas.Horas, 
+                voos[i].Horas.Minutos);
         }
         return 0;
     }
@@ -385,18 +364,18 @@ int adiciona_ou_lista_voos(){
             }
         }
         for(i = 0; i < contador_voos; i++){
-            if (strcmp(Codigo_voo, voos.Codigo_voo[i]) == 0 && 
-                Dia == voos.Data[i].Dia && Mes == voos.Data[i].Mes && 
-                Ano == voos.Data[i].Ano){
+            if (strcmp(Codigo_voo, voos[i].Codigo_voo) == 0 && 
+                Dia == voos[i].Data.Dia && Mes == voos[i].Data.Mes && 
+                Ano == voos[i].Data.Ano){
                 printf("flight already exists\n");
                 return 0;
             }
         }
         for(i = 0; i < contador_aeroportos; i++){
-            if (strcmp(IDpartida, aeroportos.ID[i]) == 0){ 
+            if (strcmp(IDpartida, aeroportos[i].ID) == 0){ 
                 Verificador_IDs += 1; 
             }                   
-            if(strcmp(IDchegada, aeroportos.ID[i]) == 0){
+            if(strcmp(IDchegada, aeroportos[i].ID) == 0){
                 Verificador_IDs += 2;
             }                                                   
         }                                                           
@@ -426,20 +405,20 @@ int adiciona_ou_lista_voos(){
             return 0;    
         }
         else{
-            strcpy(voos.Codigo_voo[contador_voos], Codigo_voo);
-            strcpy(voos.IDpartida[contador_voos], IDpartida);
-            strcpy(voos.IDchegada[contador_voos], IDchegada);
-            voos.Data[contador_voos].Ano = Ano;
-            voos.Data[contador_voos].Mes = Mes;
-            voos.Data[contador_voos].Dia = Dia;
-            voos.Horas[contador_voos].Horas = Horas_data;
-            voos.Horas[contador_voos].Minutos = Minutos_data;
-            voos.Duracao[contador_voos].Horas = Horas_Dur;
-            voos.Duracao[contador_voos].Minutos = Minutos_Dur;
-            voos.Capacidade[contador_voos] = Capacidade;
+            strcpy(voos[contador_voos].Codigo_voo, Codigo_voo);
+            strcpy(voos[contador_voos].IDpartida, IDpartida);
+            strcpy(voos[contador_voos].IDchegada, IDchegada);
+            voos[contador_voos].Data.Ano = Ano;
+            voos[contador_voos].Data.Mes = Mes;
+            voos[contador_voos].Data.Dia = Dia;
+            voos[contador_voos].Horas.Horas = Horas_data;
+            voos[contador_voos].Horas.Minutos = Minutos_data;
+            voos[contador_voos].Duracao.Horas = Horas_Dur;
+            voos[contador_voos].Duracao.Minutos = Minutos_Dur;
+            voos[contador_voos].Capacidade = Capacidade;
             for(i = 0; i < contador_aeroportos; i++){
-                if(strcmp(aeroportos.ID[i],IDpartida) == 0){
-                    aeroportos.N_voos[i] += 1;
+                if(strcmp(aeroportos[i].ID,IDpartida) == 0){
+                    aeroportos[i].N_voos += 1;
                 }
             }
             contador_voos++;
@@ -452,10 +431,10 @@ int adiciona_ou_lista_voos(){
 int lista_voos_por_ordem_de_partida(){
     int i, Verificador_IDs = 0, contador = 0;
     char ID[MAXID];
-    voo voos_p_ord = {0};
+    voo voos_p_ord[MAXVOOS] = {0};
     scanf("%s", ID);
     for(i = 0; i < contador_aeroportos; i++){
-                if(strcmp(ID,aeroportos.ID[i]) == 0){
+                if(strcmp(ID,aeroportos[i].ID) == 0){
                     Verificador_IDs++;
                 }
             }
@@ -466,27 +445,17 @@ int lista_voos_por_ordem_de_partida(){
     }
     else{ 
         for(i = 0; i < contador_voos; i++){
-            if(strcmp(voos.IDpartida[i], ID) == 0){
-                strcpy(voos_p_ord.Codigo_voo[contador], voos.Codigo_voo[i]);
-                strcpy(voos_p_ord.IDpartida[contador], voos.IDpartida[i]);
-                strcpy(voos_p_ord.IDchegada[contador], voos.IDchegada[i]);
-                voos_p_ord.Data[contador].Ano = voos.Data[i].Ano;
-                voos_p_ord.Data[contador].Mes = voos.Data[i].Mes;
-                voos_p_ord.Data[contador].Dia = voos.Data[i].Dia; 
-                voos_p_ord.Horas[contador].Horas = voos.Horas[i].Horas;
-                voos_p_ord.Horas[contador].Minutos = voos.Horas[i].Minutos;
-                voos_p_ord.Duracao[contador].Horas = voos.Duracao[i].Horas;
-                voos_p_ord.Duracao[contador].Minutos = voos.Duracao[i].Minutos;
-                voos_p_ord.Capacidade[contador] = voos.Capacidade[i];
+            if(strcmp(voos[i].IDpartida, ID) == 0){
+                voos_p_ord[contador] = voos[i];
                 contador++;
             }
         }
-        insertionSort_Voos_Data(&voos_p_ord, contador);
+        insertionSort_Voos_Data(voos_p_ord, contador);
         for(i = 0; i < contador; i++){
-            printf("%s %s %02d-%02d-%d %02d:%02d\n", voos_p_ord.Codigo_voo[i], 
-                voos_p_ord.IDchegada[i], voos_p_ord.Data[i].Dia, 
-                voos_p_ord.Data[i].Mes, voos_p_ord.Data[i].Ano,
-                voos_p_ord.Horas[i].Horas,voos_p_ord.Horas[i].Minutos);
+            printf("%s %s %02d-%02d-%d %02d:%02d\n", voos_p_ord[i].Codigo_voo, 
+                voos_p_ord[i].IDchegada, voos_p_ord[i].Data.Dia, 
+                voos_p_ord[i].Data.Mes, voos_p_ord[i].Data.Ano,
+                voos_p_ord[i].Horas.Horas,voos_p_ord[i].Horas.Minutos);
         }
     }
     return 0;
@@ -496,10 +465,10 @@ int lista_voos_por_ordem_de_partida(){
 int lista_voos_por_ordem_de_chegada(){
     int i, Verificador_IDs = 0, contador = 0;
     char ID[MAXID];
-    voo voos_p_ord = {0};
+    voo voos_p_ord[MAXVOOS] = {0};
     scanf("%s", ID);
     for(i = 0; i < contador_aeroportos; i++){
-                if(strcmp(ID,aeroportos.ID[i]) == 0){
+                if(strcmp(ID,aeroportos[i].ID) == 0){
                     Verificador_IDs++;
                 }
             }
@@ -510,31 +479,21 @@ int lista_voos_por_ordem_de_chegada(){
     }
     else{ 
         for(i = 0; i < contador_voos; i++){
-            if(strcmp(voos.IDchegada[i], ID) == 0){
-                strcpy(voos_p_ord.Codigo_voo[contador], voos.Codigo_voo[i]);
-                strcpy(voos_p_ord.IDpartida[contador], voos.IDpartida[i]);
-                strcpy(voos_p_ord.IDchegada[contador], voos.IDchegada[i]);
-                voos_p_ord.Data[contador].Ano = voos.Data[i].Ano;
-                voos_p_ord.Data[contador].Mes = voos.Data[i].Mes;
-                voos_p_ord.Data[contador].Dia = voos.Data[i].Dia; 
-                voos_p_ord.Horas[contador].Horas = voos.Horas[i].Horas;
-                voos_p_ord.Horas[contador].Minutos = voos.Horas[i].Minutos;
-                voos_p_ord.Duracao[contador].Horas = voos.Duracao[i].Horas;
-                voos_p_ord.Duracao[contador].Minutos = voos.Duracao[i].Minutos;
-                voos_p_ord.Capacidade[contador] = voos.Capacidade[i];
+            if(strcmp(voos[i].IDchegada, ID) == 0){
+                voos_p_ord[contador] = voos[i];
                 contador++;
             }
         }
         for(i = 0; i < contador; i++){
-            Avancar_Hora(&voos_p_ord.Horas[i], &voos_p_ord.Duracao[i]);
-            corrige_Data(&voos_p_ord.Data[i],&voos_p_ord.Horas[i]);
+            Avancar_Hora(&voos_p_ord[i].Horas, &voos_p_ord[i].Duracao);
+            corrige_Data(&voos_p_ord[i].Data,&voos_p_ord[i].Horas);
         }
-        insertionSort_Voos_Data(&voos_p_ord, contador);
+        insertionSort_Voos_Data(voos_p_ord, contador);
         for(i = 0; i < contador; i++){
-            printf("%s %s %02d-%02d-%d %02d:%02d\n", voos_p_ord.Codigo_voo[i], 
-                voos_p_ord.IDpartida[i], voos_p_ord.Data[i].Dia, 
-                voos_p_ord.Data[i].Mes, voos_p_ord.Data[i].Ano,
-                voos_p_ord.Horas[i].Horas,voos_p_ord.Horas[i].Minutos);
+            printf("%s %s %02d-%02d-%d %02d:%02d\n", voos_p_ord[i].Codigo_voo, 
+                voos_p_ord[i].IDpartida, voos_p_ord[i].Data.Dia, 
+                voos_p_ord[i].Data.Mes, voos_p_ord[i].Data.Ano,
+                voos_p_ord[i].Horas.Horas,voos_p_ord[i].Horas.Minutos);
         }
     }
     return 0;
@@ -557,13 +516,19 @@ int muda_data(){
     }
 }
 
+/*Cria um novo Noh do tipo Ligacao*/
 Ligacao Novo_noh(reserva buffer)
 {
     Ligacao x = (Ligacao) malloc(sizeof(struct nohs));
+    if(x == NULL){
+        fail();
+    }
     x->reservas = buffer;
     x->prox = NULL;
     return x;
 }
+
+/*adiciona o noh criado pela funcao Novo_noh ah linked listed do input*/
 Ligacao adiciona_noh_inicio(Ligacao head, reserva Nova_reserva)
 {
     Ligacao x = Novo_noh(Nova_reserva);
@@ -571,36 +536,45 @@ Ligacao adiciona_noh_inicio(Ligacao head, reserva Nova_reserva)
     return x;
 }
 
-void apagar_noh(struct nohs* lista, int num_elementos, char Codigo_reserva[MAXINPUT]){
-    struct nohs* aux;
-    if(lista == NULL){
-        return;
+/*apaga o node com o codigo de reserva iguasl ao codigo do input*/
+struct nohs* delete(char Codigo[], Ligacao inicio){
+
+    Ligacao atual = inicio;
+    Ligacao anterior = NULL;
+    if(inicio == NULL) {
+        return NULL;
     }
-    for(aux = lista;aux != NULL; aux = aux->prox){
-        if(strcmp(lista->reservas.Codigo_reserva, Codigo_reserva) == 0){
-            aux = lista;
-            lista = lista->prox;
-            num_elementos--;
-            return;
+
+    while(strcmp(atual->reservas.Codigo_reserva, Codigo) != 0){
+        if(atual->prox == NULL) {
+            return NULL;
+        } else {
+            anterior = atual;
+            atual = atual->prox;
         }
     }
+    if(atual == inicio) {
+        inicio = inicio->prox;
+    } 
+    else {
+        anterior->prox = atual->prox;
+    }   
+    return inicio;
 }
 
+/*Ordena lista de reservas por ordem lexicografica*/
 void insertionSort_Voos_reservas(reserva reservas_p_ord[], int Num_reservas){
-    int i, j, chave_Num_Passageiros;
-    char chave_codigo_reserva[MAXINPUT];
+    int i, j;
+    reserva chave;
     for (i = 1; i < Num_reservas; i++) {
-        strcpy(chave_codigo_reserva, reservas_p_ord[i].Codigo_reserva);
-        chave_Num_Passageiros = reservas_p_ord[i].Num_passageiros_reserva;
+        chave = reservas_p_ord[i];
         j = i - 1;
-        while(j >= 0 && strcmp(reservas_p_ord[j].Codigo_reserva, chave_codigo_reserva) > 0){
-            strcpy(reservas_p_ord[j + 1].Codigo_reserva, reservas_p_ord[j].Codigo_reserva);
-            reservas_p_ord[j + 1].Num_passageiros_reserva = reservas_p_ord[j].Num_passageiros_reserva;
+        while(j >= 0 && strcmp(reservas_p_ord[j].Codigo_reserva, 
+            chave.Codigo_reserva) > 0){
+            reservas_p_ord[j + 1] = reservas_p_ord[j];
             j--;
         }
-        strcpy(reservas_p_ord[j + 1].Codigo_reserva, chave_codigo_reserva);
-        reservas_p_ord[j + 1].Num_passageiros_reserva = chave_Num_Passageiros;
-
+        reservas_p_ord[j + 1] = chave;
     }
 }
 
@@ -610,6 +584,9 @@ reserva* linked_list_to_array(struct nohs* linked_list, int Num_reservas){
     int i = 0;
     struct nohs* iterador = linked_list;
     reserva* array = (reserva*)malloc(sizeof(reserva)*Num_reservas);
+    if(array == NULL){
+        fail();
+    }
     for(;iterador != NULL; iterador = iterador->prox){
         array[i] = iterador->reservas;
         i++;
@@ -628,7 +605,8 @@ int adiciona_ou_lista_reservas(){
     struct nohs* iterador;
     scanf("%s %d-%d-%d%c", Codigo_voo, &Dia, &Mes, &Ano, &carater);
     for(i = 0; i < contador_voos; i++){
-        if(strcmp(Codigo_voo, voos.Codigo_voo[i]) == 0 && Dia == voos.Data[i].Dia && Mes == voos.Data[i].Mes && Ano == voos.Data[i].Ano){
+        if(strcmp(Codigo_voo, voos[i].Codigo_voo)==0 && Dia == voos[i].Data.Dia 
+                && Mes == voos[i].Data.Mes && Ano == voos[i].Data.Ano){
             ind_voo = i;
             break;
         }
@@ -644,26 +622,33 @@ int adiciona_ou_lista_reservas(){
     else if(carater == ' '){ /*Se houver input para alem da data/codigo_voo*/
         scanf("%s %d", Codigo_reserva, &Numero_de_pessoas);
         Length_codigo_reserva = strlen(Codigo_reserva);
-        aux.Codigo_reserva = (char*) malloc(sizeof(char)*(Length_codigo_reserva+1));
+        aux.Codigo_reserva=(char*)malloc(sizeof(char)*(Length_codigo_reserva+1));
+        if(aux.Codigo_reserva == NULL){
+            fail();
+        }
         strcpy(aux.Codigo_reserva, Codigo_reserva);
         aux.Num_passageiros_reserva = Numero_de_pessoas;
         for(i = 0; i < Length_codigo_reserva; i++){
-            if(Length_codigo_reserva < 10 || (isdigit(Codigo_reserva[i]) == 0 && isupper(Codigo_reserva[i]) == 0)){
+            if(Length_codigo_reserva < 10 || (isdigit(Codigo_reserva[i]) == 0 &&
+             isupper(Codigo_reserva[i]) == 0)){
                 printf("invalid reservation code\n");
                 return 0;
             }
         }
         for(i = 0; i < contador_voos; i++){
-            for(iterador = voos.reservas_list[i];iterador != NULL; iterador = iterador->prox){
-                if(strcmp(iterador->reservas.Codigo_reserva, Codigo_reserva) == 0){
-                    printf("%s: flight reservation already used\n", Codigo_reserva);
+            for(iterador = voos[i].reservas_list;iterador != NULL;
+                 iterador = iterador->prox){
+                if(strcmp(iterador->reservas.Codigo_reserva,Codigo_reserva)==0){
+                    printf("%s: flight reservation already used\n", 
+                        Codigo_reserva);
                     return 0;
                 }
                 
             }
         }
         
-        if(voos.Num_passageiros[ind_voo] + Numero_de_pessoas > voos.Capacidade[ind_voo]){
+        if(voos[ind_voo].Num_passageiros + Numero_de_pessoas >
+             voos[ind_voo].Capacidade){
             printf("too many reservations\n");
             return 0;
         }
@@ -671,17 +656,19 @@ int adiciona_ou_lista_reservas(){
             printf("invalid passenger number\n");
             return 0;
         }
-        voos.Num_passageiros[ind_voo] += Numero_de_pessoas;
-        voos.reservas_list[ind_voo] = adiciona_noh_inicio(voos.reservas_list[ind_voo], aux);
-        voos.Num_reservas[ind_voo]++;
+        voos[ind_voo].Num_passageiros += Numero_de_pessoas;
+        voos[ind_voo].reservas_list = adiciona_noh_inicio(voos[ind_voo].reservas_list, aux);
+        voos[ind_voo].Num_reservas++;
             
     }
     else{/*Se nao houver input para alem da data/codigo_voo*/
-        linkedlist_array = linked_list_to_array(voos.reservas_list[ind_voo], voos.Num_reservas[ind_voo]);
-        insertionSort_Voos_reservas(linkedlist_array, voos.Num_reservas[ind_voo]);
-        if(voos.Num_reservas[ind_voo] > 0){
-            for(j = 0; j < voos.Num_reservas[ind_voo]; j++){
-                printf("%s %d\n", linkedlist_array[j].Codigo_reserva, linkedlist_array[j].Num_passageiros_reserva);
+        linkedlist_array = linked_list_to_array(voos[ind_voo].reservas_list, 
+            voos[ind_voo].Num_reservas);
+        insertionSort_Voos_reservas(linkedlist_array,voos[ind_voo].Num_reservas);
+        if(voos[ind_voo].Num_reservas > 0){
+            for(j = 0; j < voos[ind_voo].Num_reservas; j++){
+                printf("%s %d\n", linkedlist_array[j].Codigo_reserva, 
+                    linkedlist_array[j].Num_passageiros_reserva);
             }
         }
         free(linkedlist_array);
@@ -689,39 +676,26 @@ int adiciona_ou_lista_reservas(){
     return 0;
 }
 
-/*Funcao que print linked list*/
-void print_linked_list(struct nohs* linkedlist){
-    struct nohs* iterador;
-    for(iterador = linkedlist; iterador != NULL; iterador = iterador->prox){
-        printf("%s %d\n", iterador->reservas.Codigo_reserva, iterador->reservas.Num_passageiros_reserva);
-    }
-}
 
+/*Funcao apaga i voo com o Codigo de voo = Codigo[] do input*/
 void apagar_voo(char Codigo[], char ID_partida[]){
     int i, j, k, Indice_voo = 0;
     struct nohs* iterador;
     for(i = 0; i < contador_voos; i++){
-        if(strcmp(Codigo, voos.Codigo_voo[i]) == 0){
+        if(strcmp(Codigo, voos[i].Codigo_voo) == 0){
             Indice_voo = i;
-            for(iterador = voos.reservas_list[Indice_voo];iterador != NULL; iterador = iterador->prox){
-                apagar_noh(voos.reservas_list[Indice_voo], voos.Num_reservas[Indice_voo], iterador->reservas.Codigo_reserva);
-                voos.Num_reservas[Indice_voo]--;
+            for(iterador = voos[Indice_voo].reservas_list;iterador != NULL; 
+                iterador = iterador->prox){
+                delete(iterador->reservas.Codigo_reserva,
+                    voos[Indice_voo].reservas_list);
+                voos[Indice_voo].Num_reservas--;
             }
             for(k = Indice_voo; k < contador_voos; k++){
-                strcpy(voos.Codigo_voo[k] ,voos.Codigo_voo[k+1]);
-                strcpy(voos.IDpartida[k] ,voos.IDpartida[k+1]);
-                strcpy(voos.IDchegada[k] ,voos.IDchegada[k+1]);
-                voos.Data[k] = voos.Data[k+1];
-                voos.Horas[k] = voos.Horas[k+1];
-                voos.Duracao[k] = voos.Duracao[k+1];
-                voos.Capacidade[k] = voos.Capacidade[k+1];
-                voos.reservas_list[k] = voos.reservas_list[k+1];
-                voos.Num_passageiros[k] = voos.Num_passageiros[k+1];
-                voos.Num_reservas[k] = voos.Num_reservas[k+1];
+                voos[k] = voos[k+1];
             }
             for(j = 0; j < contador_aeroportos; j++){
-                if(strcmp(ID_partida, aeroportos.ID[j]) == 0){
-                    aeroportos.N_voos[j]--;
+                if(strcmp(ID_partida, aeroportos[j].ID) == 0){
+                    aeroportos[j].N_voos--;
                 }
             }
             contador_voos--;
@@ -731,20 +705,21 @@ void apagar_voo(char Codigo[], char ID_partida[]){
     
 }
 
-/* Elimina voos ou uma reserva*/
+/* Elimina voos ou uma reserva de acordo com o codigo tirado do utilizador*/
 int elimina_voos_ou_reserva(){
-    char Codigo[MAXINPUT];
+    char Codigo[MAXINPUT];    
     int  Indice_voo = 0, i, verificador = 0;
     struct nohs* iterador;
     scanf("%s", Codigo);
+
     for(i = 0; i < contador_voos; i++){
-        if((strcmp(Codigo, voos.Codigo_voo[i]) == 0)){
-            verificador++;
+        if((strcmp(Codigo, voos[i].Codigo_voo) == 0)){
+            verificador++;/*Se o codigo for de um ou mais voo*/
         }
-        if(voos.Num_reservas[i] > 0){
-            for(iterador = voos.reservas_list[i];iterador != NULL; iterador = iterador->prox){
+        if(voos[i].Num_reservas > 0){
+            for(iterador = voos[i].reservas_list;iterador != NULL;iterador = iterador->prox){
                 if(strcmp(iterador->reservas.Codigo_reserva, Codigo) == 0){
-                    verificador = -5;
+                    verificador = -5;/*Se for encontrado o codigo de reserva*/
                     Indice_voo = i;
                 }
             }
@@ -755,13 +730,13 @@ int elimina_voos_ou_reserva(){
         return 0;
     }
     else if(verificador == -5){
-        apagar_noh(voos.reservas_list[Indice_voo], voos.Num_reservas[Indice_voo], Codigo);
-        voos.Num_reservas[Indice_voo]--;
-        voos.Num_passageiros[Indice_voo] -= voos.reservas_list[Indice_voo]->reservas.Num_passageiros_reserva;
+        voos[Indice_voo].Num_reservas--;
+        voos[Indice_voo].Num_passageiros -= voos[Indice_voo].reservas_list->reservas.Num_passageiros_reserva;
+        voos[Indice_voo].reservas_list = delete(Codigo, voos[Indice_voo].reservas_list);
         return 0;
     }
     else{
-        apagar_voo(Codigo, voos.IDpartida[Indice_voo]);
+        apagar_voo(Codigo, voos[Indice_voo].IDpartida);
     }
     return 0;
 }
